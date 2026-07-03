@@ -28,18 +28,28 @@ def health_check():
 
 @app.post("/api/v1/analyze")
 def analyze_trades(payload: AnalysisRequest):
-    formatted_history = []
+    # System Instruction handling for both file texts and text messages
+    system_instruction = (
+        "Aap AI Trade Guru ke advanced behavioral coach hain. F&O traders ke behavioral mistakes ko deeply analyze kijiye.\n"
+        "STRICT RESPOND RULES:\n"
+        "1. Response ekdam short, crisp aur core insights par hona chahiye (Max 2-3 brief points/paragraphs).\n"
+        "2. Agar trader koi log file ya spreadsheet raw text upload kare, toh usme se loss patterns, emotional loops (revenge, FOMO, panic) dhoondhein aur short blunt feedback dein.\n"
+        "3. Response strictly Hinglish language me point-to-point bina kisi lambe introduction ke bhein."
+    )
+    
+    formatted_history = [{"role": "system", "content": system_instruction}]
+    
     for msg in payload.messages:
-        item = {"role": msg.role}
-        if msg.content:
-            item["content"] = msg.content
-        if msg.reasoning_details:
-            item["reasoning_details"] = msg.reasoning_details
-        formatted_history.append(item)
+        if msg.role != "system":
+            item = {"role": msg.role}
+            if msg.content:
+                item["content"] = msg.content
+            if msg.reasoning_details:
+                item["reasoning_details"] = msg.reasoning_details
+            formatted_history.append(item)
         
     result = generate_trader_insights(formatted_history)
     
-    # Check explicitly if integration failed
     if not result.get("success"):
         raise HTTPException(status_code=500, detail=result.get("error", "Internal Server Error"))
         
