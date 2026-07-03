@@ -2,19 +2,18 @@ import os
 import requests
 import json
 
-# 💎 100% Active, Fast, and Stable Free Models List
+# 💎 Pure Active, Fast, and Synced Free Models List (Venice Pro Removed)
 VALID_MODELS = {
     "google/gemma-4-26b-a4b-it:free": "Gemini Pro",
-    "venice/uncensored-24b:free": "Venice Pro",         # 🚀 NEW FAST MODEL
     "openai/gpt-oss-120b:free": "GPT Pro",
-    "openai/gpt-oss-20b:free": "GPT Lite",             # 🚀 NEW FAST MODEL
+    "openai/gpt-oss-20b:free": "GPT Lite",
     "nvidia/nemotron-3-ultra-550b-a55b:free": "Nemotron Ultra"
 }
 
 def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-it:free"):
     """
-    Ultra-fast OpenRouter API Wrapper mapped with lightning-fast free models.
-    Prevents timeouts and internal backend crashes.
+    Ultra-resilient OpenRouter API Wrapper.
+    Prevents empty parameters and filters structural data smoothly.
     """
     api_key = os.getenv("OPENROUTER_API_KEY")
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -25,7 +24,7 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
     if model_id not in VALID_MODELS:
         model_id = "google/gemma-4-26b-a4b-it:free"
 
-    # Cleaning payload to pass strict content specifications
+    # Cleaning payload strings to pass strict content specifications
     formatted_messages = []
     for msg in messages_history:
         if isinstance(msg, dict):
@@ -48,17 +47,17 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
         "model": model_id,
         "messages": formatted_messages,
         "provider": {
-            "allow_fallbacks": True  # Proxy level adjustments
+            "allow_fallbacks": True
         }
     }
 
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=25)
+        response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=30)
         
         if response.status_code != 200:
             return {
                 "success": False, 
-                "error": f"Status {response.status_code}. Server Response: {response.text}"
+                "error": f"OpenRouter Gateway Status {response.status_code}: {response.text}"
             }
             
         response_json = response.json()
@@ -85,4 +84,4 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
             return {"success": False, "error": f"Empty response structure: {json.dumps(response_json)}"}
 
     except Exception as e:
-        return {"success": False, "error": f"Pipeline network exception: {str(e)}"}
+        return {"success": False, "error": f"Pipeline connection error: {str(e)}"}
