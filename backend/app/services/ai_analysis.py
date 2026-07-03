@@ -2,19 +2,19 @@ import os
 import requests
 import json
 
-# 💎 Updated strictly allowed premium models list (Removed Qwen, Added Meta & Hermes)
+# 💎 Strictly Synced with Frontend Dropdown Short Names & OpenRouter Free Spec IDs
 VALID_MODELS = {
     "google/gemma-4-26b-a4b-it:free": "Gemini Pro",
     "meta-llama/llama-3.3-70b-instruct:free": "Meta Pro",
     "openai/gpt-oss-120b:free": "GPT Pro",
-    "nousresearch/hermes-3-llama-3.1-405b:free": "Hermes-3 405B",
-    "nvidia/nemotron-3-ultra-550b-a55b:free": "Nvidia"
+    "nousresearch/hermes-3-llama-3.1-405b:free": "Hermes Pro",
+    "nvidia/nemotron-3-ultra-550b-a55b:free": "Pro"
 }
 
 def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-it:free"):
     """
     OpenRouter API Wrapper supporting dynamic model synchronization.
-    Fully updated for Meta Llama and Hermes models payload extraction.
+    Fully updated mapping parameters for Meta Pro, Hermes Pro, and Pro (Nvidia) models.
     """
     api_key = os.getenv("OPENROUTER_API_KEY")
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -49,7 +49,7 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
     payload = {
         "model": model_id,
         "messages": formatted_messages,
-        "reasoning": {"enabled": True}  # Reasoning tokens open rakhega for supported models
+        "reasoning": {"enabled": True}  # Keeps processing paths open
     }
 
     try:
@@ -75,7 +75,8 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
             return {
                 "success": True,
                 "content": ai_content if ai_content else "Data processed successfully.",
-                "reasoning_details": ai_reasoning
+                "reasoning_details": ai_reasoning,
+                "active_model": VALID_MODELS[model_id]  # Returns accurate active tracking info
             }
         else:
             return {
