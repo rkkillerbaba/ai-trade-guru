@@ -13,8 +13,8 @@ VALID_MODELS = {
 
 def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-it:free"):
     """
-    OpenRouter API Wrapper supporting dynamic model synchronization.
-    Fully updated mapping parameters for Meta Pro, Hermes Pro, and Pro (Nvidia) models.
+    OpenRouter API Wrapper with forced stream handling override.
+    Disables streaming chunks to fix 500 crashes on Meta Pro and Hermes Pro.
     """
     api_key = os.getenv("OPENROUTER_API_KEY")
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -45,10 +45,11 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
         "Content-Type": "application/json"
     }
 
-    # Dynamic Payload Configuration
+    # 🚀 Forcing stream=False ensures OpenRouter formats text output fully before sending it to Render
     payload = {
         "model": model_id,
         "messages": formatted_messages,
+        "stream": False,               # 🌟 CRITICAL FIX: Meta aur Hermes ke stream layers ko bypass karega
         "reasoning": {"enabled": True}  # Keeps processing paths open
     }
 
@@ -69,6 +70,7 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
             ai_content = message_obj.get('content', '')
             ai_reasoning = message_obj.get('reasoning_details', None)
             
+            # Alternate fallback parse for unique nested tokens
             if not ai_content and 'text' in message_obj:
                 ai_content = message_obj.get('text', '')
             
@@ -76,7 +78,7 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
                 "success": True,
                 "content": ai_content if ai_content else "Data processed successfully.",
                 "reasoning_details": ai_reasoning,
-                "active_model": VALID_MODELS[model_id]  # Returns accurate active tracking info
+                "active_model": VALID_MODELS[model_id]
             }
         else:
             return {
