@@ -1,9 +1,20 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from app.services.ai_analysis import generate_trader_insights
 
 app = FastAPI(title="AI Trade Guru Backend")
+
+# ================= CORS CONFIGURATION (MOST IMPORTANT) =================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Production me security ke liye yahan sirf apna Vercel URL bhi daal sakte hain
+    allow_credentials=True,
+    allow_methods=["*"],  # Saare methods (POST, GET, etc.) allowed hain
+    allow_headers=["*"],  # Saare headers allowed hain
+)
+# ======================================================================
 
 class ChatMessage(BaseModel):
     role: str
