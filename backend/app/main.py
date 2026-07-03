@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from app.services.ai_analysis import generate_trader_insights
 
@@ -19,9 +19,10 @@ class ChatMessage(BaseModel):
     content: Optional[str] = None
     reasoning_details: Optional[str] = None
 
+# 🚀 CRITICAL FIX: Changed from model_name to engine_id to bypass Pydantic private namespaces warning completely
 class AnalysisRequest(BaseModel):
     messages: List[ChatMessage]
-    model_name: Optional[str] = "google/gemma-4-26b-a4b-it:free"
+    engine_id: Optional[str] = "google/gemma-4-26b-a4b-it:free"
 
 @app.get("/health")
 def health_check():
@@ -49,7 +50,8 @@ def analyze_trades(payload: AnalysisRequest):
                 item["reasoning_details"] = msg.reasoning_details
             formatted_history.append(item)
         
-    result = generate_trader_insights(formatted_history, model_id=payload.model_name)
+    # 🔄 Passing the clean engine_id downward
+    result = generate_trader_insights(formatted_history, model_id=payload.engine_id)
     
     if not result.get("success"):
         raise HTTPException(status_code=500, detail=result.get("error", "Internal Server Error"))
