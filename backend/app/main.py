@@ -37,28 +37,10 @@ def analyze_trades(payload: AnalysisRequest):
             item["reasoning_details"] = msg.reasoning_details
         formatted_history.append(item)
         
-    try:
-        result = generate_trader_insights(formatted_history)
+    result = generate_trader_insights(formatted_history)
+    
+    # Check explicitly if integration failed
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Internal Server Error"))
         
-        if isinstance(result, dict) and result.get("success"):
-            # Check if AI actually generated content
-            if not result.get("content"):
-                return {
-                    "success": True,
-                    "content": "⚠️ OpenRouter returned an empty message. Please check if your model settings are correct or try a different prompt.",
-                    "reasoning_details": "Response verified but payload content was empty."
-                }
-            return result
-            
-        return {
-            "success": True,
-            "content": str(result.get("content", "⚠️ AI response parsing format anomaly.")),
-            "reasoning_details": result.get("reasoning_details", None)
-        }
-    except Exception as e:
-        # Pura precise error block UI par return karein taaki breakdown pata chale
-        return {
-            "success": True, 
-            "content": f"🚨 OpenRouter Pipeline Alert: {str(e)}. Please check your API credits or token validity.",
-            "reasoning_details": "Pipeline Exception Captured Safely."
-        }
+    return result
