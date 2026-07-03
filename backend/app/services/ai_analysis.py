@@ -2,6 +2,7 @@ import os
 import requests
 import json
 import re
+import yfinance as yf
 
 # Fallback sequence agar primary model fail ho jaye
 MODEL_FALLBACK_SEQUENCE = [
@@ -17,6 +18,40 @@ VALID_MODELS = {
     "openai/gpt-oss-20b:free": "GPT Lite",
     "nvidia/nemotron-3-ultra-550b-a55b:free": "Nemotron Ultra"
 }
+
+def get_market_summary():
+    """
+    📈 Yahoo Finance Engine: Fetches current market metrics safely without raising block triggers.
+    """
+    try:
+        # Fetching Nifty 50 and Bank Nifty tickers from Yahoo Finance
+        nifty = yf.Ticker("^NSEI")
+        banknifty = yf.Ticker("^NSEBANK")
+        
+        nifty_history = nifty.history(period="2d")
+        banknifty_history = banknifty.history(period="2d")
+        
+        summary = "[LIVE MARKET SUMMARY LOGS]\n"
+        
+        if not nifty_history.empty and len(nifty_history) >= 2:
+            nifty_close = nifty_history['Close'].iloc[-1]
+            nifty_prev = nifty_history['Close'].iloc[-2]
+            nifty_change = ((nifty_close - nifty_prev) / nifty_prev) * 100
+            summary += f"- NIFTY 50: {nifty_close:.2f} ({nifty_change:+.2f}%)\n"
+        else:
+            summary += "- NIFTY 50: Data temporary unavailable via Yahoo Nodes.\n"
+            
+        if not banknifty_history.empty and len(banknifty_history) >= 2:
+            bn_close = banknifty_history['Close'].iloc[-1]
+            bn_prev = banknifty_history['Close'].iloc[-2]
+            bn_change = ((bn_close - bn_prev) / bn_prev) * 100
+            summary += f"- BANK NIFTY: {bn_close:.2f} ({bn_change:+.2f}%)\n"
+        else:
+            summary += "- BANK NIFTY: Data temporary unavailable via Yahoo Nodes.\n"
+            
+        return summary
+    except Exception as e:
+        return f"[MARKET DATA NOTICE]: Yahoo Finance stream currently offline or processing weekend closure. Log: {str(e)}"
 
 def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-it:free"):
     """
