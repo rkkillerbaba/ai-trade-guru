@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from app.services.ai_analysis import generate_trader_insights
+# 📈 Imported get_market_summary safely along with the analytical engine
+from app.services.ai_analysis import generate_trader_insights, get_market_summary
 
 app = FastAPI(title="AI Trade Guru Backend")
 
@@ -50,7 +51,15 @@ def analyze_trades(payload: AnalysisRequest):
         "3. **Formatting Matrix**: Key metrics, errors, aur problem numbers ko hamesha double asterisks (**text**) ka use karke strict bold parameters me highlights karein."
     )
     
-    formatted_history = [{"role": "system", "content": system_instruction}]
+    # 📈 LIVE YAHOO FINANCE DATA INJECTION ENGINE
+    market_data_feed = get_market_summary()
+    full_combined_prompt = (
+        f"{system_instruction}\n\n"
+        f"{market_data_feed}\n"
+        f"Use this live context to judge if the trader fought the trend or over-traded in a sideways market structure."
+    )
+
+    formatted_history = [{"role": "system", "content": full_combined_prompt}]
     
     for msg in payload.messages:
         if msg.role != "system":
