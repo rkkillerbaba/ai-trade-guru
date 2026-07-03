@@ -53,13 +53,23 @@ def analyze_trades(payload: AnalysisRequest):
         
     result = generate_trader_insights(formatted_history, model_id=payload.engine_id)
     
-    # 🌟 CRITICAL RE-ENGINEERING: Ab Render kabhi bhi 500 error return nahi karega.
-    # Agar model slow ya overloaded hoga, toh yeh bypass karke error client screen par return karega (Hamesha 200 OK)
+    # 🌟 PREMIUM RE-ENGINEERING: All ugly raw traces are parsed into a single professional sentence block
     if not result.get("success"):
-        server_error = result.get("error", "Internal Server Error")
+        server_error = str(result.get("error", "")).lower()
+        
+        # Smart detection for different routing bottleneck cases
+        if any(err in server_error for err in ["429", "rate-limited", "exhausted", "limit"]):
+            user_friendly_msg = "Free AI Engines par abhi traffic thoda zyada hai ya server temporary busy chal raha hai."
+        else:
+            user_friendly_msg = "AI Network pipeline communication nodes temporary refresh ho rahe hain."
+
         return {
             "success": True, 
-            "content": f"### ⚠️ Engine Protocol Alert\nSelected Model cluster limit overload par hai ya slow respond kar raha hai.\n\n**Server Tracing Log:**\n`{server_error}`\n\n👉 Please ek baar fir se **Send Button** par click karein ya fir stable **Gemini Pro / GPT Pro** select karke try karein."
+            "content": (
+                f"### ⚠️ Server Busy\n"
+                f"{user_friendly_msg}\n\n"
+                f"👉 Please 10-15 seconds ruk kar **Send Button** par fir se click karein ya dropdown menu se koi doosra model (jaise **GPT Pro**) select karke try karein."
+            )
         }
         
     return result
