@@ -16,7 +16,7 @@ app.add_middleware(
 
 class ChatMessage(BaseModel):
     role: str
-    content: Optional[str] = None
+    content: Optional[str] = ""  # Safe string default value to prevent validation failure
     reasoning_details: Optional[str] = None
 
 class AnalysisRequest(BaseModel):
@@ -43,8 +43,10 @@ def analyze_trades(payload: AnalysisRequest):
     for msg in payload.messages:
         if msg.role != "system":
             item = {"role": msg.role}
-            if msg.content:
-                item["content"] = msg.content
+            # Clean string parsing and default fallbacks for raw background file objects
+            cleaned_content = str(msg.content or "").strip()
+            item["content"] = cleaned_content if cleaned_content else "User shared data context ledger matrix below."
+            
             if msg.reasoning_details:
                 item["reasoning_details"] = msg.reasoning_details
             formatted_history.append(item)
