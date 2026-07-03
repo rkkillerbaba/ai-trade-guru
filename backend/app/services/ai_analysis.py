@@ -2,19 +2,19 @@ import os
 import requests
 import json
 
-# 💎 Frontend dropdown se match karte huye 5 best curated models ki mapping
+# 💎 Strict OpenRouter Verified IDs Mapping matching exactly with frontend dropdown
 VALID_MODELS = {
     "google/gemma-4-26b-a4b-it:free": "Gemma-4 Reasoning 26B",
-    "qwen/qwen3-next-80b-instruct:free": "Qwen-3 Next 80B Instruct",
+    "qwen/qwen3-next-80b-a3b-instruct:free": "Qwen-3 Next 80B",
     "openai/gpt-oss-120b:free": "OpenAI GPT-OSS 120B",
-    "qwen/qwen3-coder-480b-a35b:free": "Qwen-3 Coder 480B",
-    "nvidia/nemotron-3-ultra:free": "NVIDIA Nemotron 3 Ultra"
+    "qwen/qwen3-coder:free": "Qwen-3 Coder",
+    "nvidia/nemotron-3-ultra-550b-a55b:free": "NVIDIA Nemotron 3 Ultra"
 }
 
 def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-it:free"):
     """
     OpenRouter API Wrapper supporting dynamic model synchronization.
-    Accepts model_id directly passed from frontend payload.
+    Accepts model_id directly passed from frontend dropdown payload via main router.
     """
     api_key = os.getenv("OPENROUTER_API_KEY")
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -46,9 +46,9 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
         "Content-Type": "application/json"
     }
 
-    # 🚀 Dynamic Model Selection Layer
+    # 🚀 Dynamic Model Selection Layer with correct verified OpenRouter IDs
     payload = {
-        "model": model_id,             # Frontend dropdown ka model yahan live inject hoga
+        "model": model_id,             # Frontend dropdown ka absolute model path yahan live inject hoga
         "messages": formatted_messages,
         "reasoning": {"enabled": True}  # Reasoning models ke thinking tokens active rakhega
     }
