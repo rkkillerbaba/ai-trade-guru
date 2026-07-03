@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from app.services.ai_analysis import generate_trader_insights
 
 app = FastAPI(title="AI Trade Guru Backend")
@@ -19,8 +19,10 @@ class ChatMessage(BaseModel):
     content: Optional[str] = None
     reasoning_details: Optional[str] = None
 
+# 🚀 Request Schema Updated to accept model name dynamically from frontend
 class AnalysisRequest(BaseModel):
     messages: List[ChatMessage]
+    model_name: Optional[str] = "google/gemma-4-26b-a4b-it:free" # Fallback if missing
 
 @app.get("/health")
 def health_check():
@@ -48,7 +50,8 @@ def analyze_trades(payload: AnalysisRequest):
                 item["reasoning_details"] = msg.reasoning_details
             formatted_history.append(item)
         
-    result = generate_trader_insights(formatted_history)
+    # 🔄 Frontend se aaya hua selected model name yahan service function me pass ho raha hai
+    result = generate_trader_insights(formatted_history, model_id=payload.model_name)
     
     if not result.get("success"):
         raise HTTPException(status_code=500, detail=result.get("error", "Internal Server Error"))
