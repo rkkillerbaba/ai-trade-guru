@@ -2,7 +2,6 @@ import os
 import requests
 import json
 
-# 💎 100% Synced with Frontend Dropdown Short Names & OpenRouter Verified Free IDs
 VALID_MODELS = {
     "google/gemma-4-26b-a4b-it:free": "Gemini Pro",
     "meta-llama/llama-3.3-70b-instruct:free": "Meta Pro",
@@ -12,61 +11,52 @@ VALID_MODELS = {
 }
 
 def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-it:free"):
-    """
-    Resilient OpenRouter API Wrapper with fallback routing rules.
-    Eliminates 500 Gateway Errors across Meta Pro, GPT Pro, and Hermes Pro.
-    """
     api_key = os.getenv("OPENROUTER_API_KEY")
     url = "https://openrouter.ai/api/v1/chat/completions"
     
     if not api_key:
-        return {"success": False, "error": "Missing OPENROUTER_API_KEY environment variable on Render."}
+        return {"success": False, "error": "Missing OPENROUTER_API_KEY on Render Environment Variables."}
 
-    # Fallback to Gemini Pro if model is missing or invalid
     if model_id not in VALID_MODELS:
         model_id = "google/gemma-4-26b-a4b-it:free"
 
-    # 🚀 ROBUST PARSING: Cleans history and system templates perfectly to avoid strict API schema rejections
+    # 🚀 STEP 1: Basic & foolproof structural validation for OpenRouter
     formatted_messages = []
     for msg in messages_history:
         if isinstance(msg, dict):
-            role = msg.get("role", "user")
-            content = msg.get("content", "")
-            
-            # Ensure we only push messages that actually have clean textual parameters
-            if content and str(content).strip():
+            role = str(msg.get("role", "user")).strip()
+            content = str(msg.get("content", "")).strip()
+            if content:  # Strict check: OpenRouter rejects blank contents completely
                 formatted_messages.append({
-                    "role": str(role).strip(),
-                    "content": str(content).strip()
+                    "role": role,
+                    "content": content
                 })
 
-    # Essential verification parameters for OpenRouter endpoints
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://ai-trade-guru.vercel.app",
-        "X-OpenRouter-Title": "AI Trade Guru Platform"
+        "X-OpenRouter-Title": "AI Trade Guru"
     }
 
-    # 🔗 Optimized dynamic payload with fallback routing rules activated
     payload = {
         "model": model_id,
-        "messages": formatted_messages,
-        "provider": {
-            "allow_fallbacks": True  # 🌟 CRITICAL: Server busy hone par request terminate karne ke bajaye back-up free clusters hit karega
-        }
+        "messages": formatted_messages
     }
 
     try:
-        # Extended timeout to 45s to handle giant models like Hermes 405B processing time safely
-        response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=45)
+        # Timeout rakha hai 30 seconds
+        response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=30)
         
+        # 🚀 STEP 2: CRITICAL DEBUG LAYER (Backend crash nahi hoga, exact error bataega)
         if response.status_code != 200:
-            return {"success": False, "error": f"OpenRouter Rejection Status {response.status_code}: {response.text}"}
+            return {
+                "success": False, 
+                "error": f"OpenRouter Rejected Request (Status {response.status_code}). Server Response: {response.text}"
+            }
             
         response_json = response.json()
         
-        # Multi-level object extractor node passthrough pass
         if 'choices' in response_json and len(response_json['choices']) > 0:
             choice_item = response_json['choices'][0]
             message_node = choice_item.get('message', {})
@@ -74,7 +64,6 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
             ai_content = message_node.get('content', '')
             ai_reasoning = message_node.get('reasoning_details', None) or message_node.get('reasoning', None)
             
-            # Alternative layout tracking fallbacks
             if not ai_content and 'text' in message_node:
                 ai_content = message_node.get('text', '')
             if not ai_content and 'text' in choice_item:
@@ -82,12 +71,19 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
 
             return {
                 "success": True,
-                "content": ai_content.strip() if ai_content else "Insight processed successfully.",
+                "content": ai_content.strip() if ai_content else "Processed, but content node was empty.",
                 "reasoning_details": ai_reasoning,
                 "active_model": VALID_MODELS[model_id]
             }
         else:
-            return {"success": False, "error": f"OpenRouter returned empty response body matrix: {json.dumps(response_json)}"}
+            # OpenRouter agar success 200 de par choices na bheje (jaise rate limit/credit error par hota hai)
+            return {
+                "success": False, 
+                "error": f"OpenRouter returned 200 but empty choices body. Full JSON: {json.dumps(response_json)}"
+            }
 
     except Exception as e:
-        return {"success": False, "error": f"Service layer exception route crash: {str(e)}"}
+        return {
+            "success": False, 
+            "error": f"Python requests level exception caught: {str(e)}"
+        }
