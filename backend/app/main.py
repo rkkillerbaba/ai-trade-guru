@@ -19,7 +19,6 @@ class ChatMessage(BaseModel):
     content: Optional[str] = None
     reasoning_details: Optional[str] = None
 
-# 🚀 Request Schema tightly bound with custom popover short names from UI layer
 class AnalysisRequest(BaseModel):
     messages: List[ChatMessage]
     engine_id: Optional[str] = "google/gemma-4-26b-a4b-it:free"
@@ -30,14 +29,13 @@ def health_check():
 
 @app.post("/api/v1/analyze")
 def analyze_trades(payload: AnalysisRequest):
-    # System Instruction perfectly fine-tuned for handling parsed text chunks, text message strings and multi-model formats
     system_instruction = (
         "Aap AI Trade Guru ke advanced behavioral coach hain. F&O traders ke behavioral mistakes ko deeply analyze kijiye.\n"
         "STRICT RESPOND RULES:\n"
         "1. Response ekdam short, crisp aur core insights par hona chahiye (Max 2-3 brief points/paragraphs).\n"
         "2. Agar trader koi PDF document, trading log file, ya spreadsheet raw text upload kare, toh usme se loss patterns, emotional loops (revenge trading, FOMO, panic exit) dhoondhein aur short blunt professional feedback dein.\n"
         "3. Response strictly Hinglish language me point-to-point bina kisi lambe introduction ke bhein.\n"
-        "4. Key metrics aur specific problem terms ko highlight karne ke liye double asterisks (**text**) ka use karein taaki frontend interface use sahi se design format me badges bana sake."
+        "4. Key metrics aur specific problem terms ko highlight karne ke liye double asterisks (**text**) ka use karein."
     )
     
     formatted_history = [{"role": "system", "content": system_instruction}]
@@ -51,10 +49,15 @@ def analyze_trades(payload: AnalysisRequest):
                 item["reasoning_details"] = msg.reasoning_details
             formatted_history.append(item)
         
-    # 🔄 Frontend se aaya hua dynamic model protocol parameters yahan safely forward ho raha hai
     result = generate_trader_insights(formatted_history, model_id=payload.engine_id)
     
+    # 🌟 CRITICAL RE-ENGINEERING: Ab Render kabhi bhi 500 error return nahi karega.
+    # Agar model slow ya overloaded hoga, toh yeh bypass karke error client screen par return karega (Hamesha 200 OK)
     if not result.get("success"):
-        raise HTTPException(status_code=500, detail=result.get("error", "Internal Server Error"))
+        server_error = result.get("error", "Internal Server Error")
+        return {
+            "success": True, 
+            "content": f"### ⚠️ Engine Protocol Alert\nSelected Model cluster limit overload par hai ya slow respond kar raha hai.\n\n**Server Tracing Log:**\n`{server_error}`\n\n👉 Please ek baar fir se **Send Button** par click karein ya fir stable **Gemini Pro / GPT Pro** select karke try karein."
+        }
         
     return result
