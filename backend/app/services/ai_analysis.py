@@ -22,7 +22,7 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
         os.getenv("OPENROUTER_API_KEY_1"),
         os.getenv("OPENROUTER_API_KEY_2"),
         os.getenv("OPENROUTER_API_KEY_3"),
-        os.getenv("OPENROUTER_API_KEY")  # Default fallback standard variable
+        os.getenv("OPENROUTER_API_KE")  # Default fallback standard variable
     ]
     
     # Filter out empty or unconfigured keys to get a pristine active list
@@ -60,12 +60,10 @@ def generate_trader_insights(messages_history, model_id="google/gemma-4-26b-a4b-
             "X-OpenRouter-Title": "AI Trade Guru"
         }
 
+        # 🚀 FIX: Removed strict provider fallback to let Python code handle rotation smoothly
         payload = {
             "model": model_id,
-            "messages": formatted_messages,
-            "provider": {
-                "allow_fallbacks": True
-            }
+            "messages": formatted_messages
         }
 
         try:
