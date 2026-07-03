@@ -40,20 +40,25 @@ def analyze_trades(payload: AnalysisRequest):
     try:
         result = generate_trader_insights(formatted_history)
         
-        # Safe format check
         if isinstance(result, dict) and result.get("success"):
+            # Check if AI actually generated content
+            if not result.get("content"):
+                return {
+                    "success": True,
+                    "content": "⚠️ OpenRouter returned an empty message. Please check if your model settings are correct or try a different prompt.",
+                    "reasoning_details": "Response verified but payload content was empty."
+                }
             return result
             
-        # Fallback if internal process succeeded but payload format is bad
         return {
             "success": True,
-            "content": str(result.get("content", "AI process done.")),
+            "content": str(result.get("content", "⚠️ AI response parsing format anomaly.")),
             "reasoning_details": result.get("reasoning_details", None)
         }
     except Exception as e:
-        # Pura system fail hone se bachane ke liye fallback message send karein
+        # Pura precise error block UI par return karein taaki breakdown pata chale
         return {
             "success": True, 
-            "content": f"⚠️ Guru Engine Service Alert: OpenRouter or AI Analysis initialization failed. Check your API token environment variables. (Log: {str(e)})",
-            "reasoning_details": "Fallback Triggered: Exception captured during generation pipeline."
+            "content": f"🚨 OpenRouter Pipeline Alert: {str(e)}. Please check your API credits or token validity.",
+            "reasoning_details": "Pipeline Exception Captured Safely."
         }
