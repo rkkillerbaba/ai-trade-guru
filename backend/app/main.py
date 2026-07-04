@@ -15,6 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- 🔐 Authentication & User Request Schemas ---
 class ChatMessage(BaseModel):
     role: str
     content: Optional[str] = ""  # Safe string default value to prevent validation failure
@@ -24,10 +25,36 @@ class AnalysisRequest(BaseModel):
     messages: List[ChatMessage]
     engine_id: Optional[str] = "google/gemma-4-26b-a4b-it:free"
 
+class SignUpRequest(BaseModel):
+    username: str
+    full_name: str
+
+class LoginRequest(BaseModel):
+    username: str
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
 
+# --- 🔐 New Authentication Endpoints for Frontend Sync ---
+@app.post("/api/v1/auth/signup")
+def user_signup(payload: SignUpRequest):
+    cleaned_username = payload.username.strip().lower()
+    if not cleaned_username or not payload.full_name.strip():
+        raise HTTPException(status_code=400, detail="Username aur Name empty nahi ho sakte.")
+    # Safe fallback validation response layer for frontend architecture
+    return {"success": True, "username": cleaned_username, "full_name": payload.full_name.strip()}
+
+@app.post("/api/v1/auth/login")
+def user_login(payload: LoginRequest):
+    cleaned_username = payload.username.strip().lower()
+    if not cleaned_username:
+        raise HTTPException(status_code=400, detail="Username enter karna mandatory hai.")
+    # Direct access allocation for seamless dynamic state navigation
+    return {"success": True, "username": cleaned_username}
+
+
+# --- 🚀 Core Trading Analysis Routing Endpoint ---
 @app.post("/api/v1/analyze")
 def analyze_trades(payload: AnalysisRequest):
     # 💎 ULTRA-ACCURATE MULTIMODAL SYSTEM PROTOCOL (STRICT RESPECTFUL & GROUNDED)
@@ -54,7 +81,7 @@ def analyze_trades(payload: AnalysisRequest):
         "1. **Elite Professional Tone**: Response me 'tu', 'tum', 'tera', 'tumhara' jaise shabd 100% STRICTLY PROHIBITED hain. "
         "Aap hamesha trader se behad respect ke sath pesh aayenge aur strictly professional high-status terms jaise **'Aap'**, **'Aapka'**, aur **'Aapki'** shabdon ka hi prayog karenge.\n"
         "2. **Short & Raw Insights**: Intro ya formal greetings ('Hello', 'Sure, main check karta hu') bilkul nahi dena hai. Direct sharp, brutal financial coach feedback se shuru karein (Max 2-3 brief points/paragraphs).\n"
-        "3. **Strict Hinglish Language**: Pure response ko hamesha point-to-point dynamic Hindi-English mix (Hinglish) me hi bhein.\n"
+        "3. **Strict Hinglish Language**: Pure response me hamesha point-to-point dynamic Hindi-English mix (Hinglish) me hi bhein.\n"
         "4. **Formatting Matrix**: Key metrics, errors, aur problem numbers ko hamesha double asterisks (**text**) ka use karke strict bold parameters me highlights karein."
     )
     
@@ -67,6 +94,7 @@ def analyze_trades(payload: AnalysisRequest):
     for idx, msg in enumerate(payload.messages):
         if msg.role != "system":
             item = {"role": msg.role}
+            # Clean string parsing and default fallbacks for raw background file objects
             cleaned_content = str(msg.content or "").strip()
             
             # 🌟 DYNAMIC INJECTION: Force inject Yahoo Finance context directly into the LAST active user prompt block
