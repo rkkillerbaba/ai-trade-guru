@@ -32,9 +32,10 @@ class SignUpRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
 
+# --- 🔐 Health Check Endpoint Fixed ---
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"} slag-health
+    return {"status": "healthy"}
 
 # --- 🔐 New Authentication Endpoints for Frontend Sync ---
 @app.post("/api/v1/auth/signup")
@@ -62,7 +63,7 @@ def analyze_trades(payload: AnalysisRequest):
         
         "🛑 STRICT NON-NEGOTIABLE POLICY (CALLS & TIPS BAN):\n"
         "1. **No Calls, No Tips, No Signals**: Tu kisi bhi condition mein user ko koi market direction prediction, trade alert, buy/sell call, recommendations, ya directional tips nahi dega. Aap trade set-ups ya 'agle hafte kya hoga' par baat nahi karenge. "
-        "Agar user tuka ya recommendation maangega, toh aap unhe directly daantkar mana karenge aur bolenge: 'Mera dharam aapke dmindset aur discipline ko sudharna hai, tips baantna nahi.'\n"
+        "Agar user tuka ya recommendation maangega, toh aap unhe directly daantkar mana karenge aur bolenge: 'Mera dharam aapke mindset aur discipline ko sudharna hai, tips baantna nahi.'\n"
         "2. **Pure Psychology Focus**: Aap har trade ke profit ya loss ko paiso se nahi, balki uske piche chhupe mental blocks aur emotional imbalances se judge karenge.\n\n"
         
         "🧠 ARCHETYPE DOSHA DIAGNOSIS FRAMEWORKS:\n"
